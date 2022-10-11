@@ -1,0 +1,366 @@
+package project;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.EventQueue;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import jmapps.util.StateHelper;
+
+
+
+
+public class MyGUI extends JFrame{
+	
+
+	JPanel jp_select,jp_original,jp_transform,jp_video1,jp_video2;
+//	static JPanel jp_video2;
+	JLabel jLabel,jl_SDirectory,jl_VDirectory,jl_SFormat,jl_VFormat;
+	JButton btn_capture,btn_pause,btn_screenshot,btn_record,btn_set,btn_SDirectory,btn_VDirectory,btn_sure,btn_cutstop,btn_cutstart;
+	JComboBox jBox;
+	static JComboBox jb_SFormat;
+	static JComboBox jb_VFormat;
+	JList jList;
+	JFrame setFrame,cutFrame;
+	static JTextField jf_SDirectory;
+	static JTextField jf_VDirectory;//"鬼影特效"
+	Object []show = {"鬼影特效"};
+	static Object []sFormat = {"bmp","png","jpg","gif"};
+	static Object []vFormat = {"avi","rm","rmvb","mp4","mov"};
+	private static String SDirectory =   "D:\\";//默认图片存放地址
+	private static String VDirectory = "D:\\";//默认视频存放地址
+	private static String SFormat = "bmp";//默认图片存放格式
+	private static String VFormat = "avi";//默认截屏存放格式
+	private static int VFormatIndex;
+	String str = "vfw:Microsoft WDM Image Capture (Win32):0";    //获取本地摄像头的字符串
+	private Image image;
+	private static int selectEffect = -1;
+
+	//构造函数
+	public MyGUI(){
+		this.setBounds(150,150,1200,605);//(x,y,width,height)
+		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		this.setLayout(null);
+        //捕获视频 界面
+		btn_capture = new JButton("捕获视频");
+		btn_capture.setBounds(290, 20, 90, 30);
+		btn_capture.addActionListener(new ActionListener() { //监听事件
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+			}
+		});
+		this.add(btn_capture);
+
+		//暂停捕获 界面
+		btn_pause = new JButton("暂停捕获");
+		btn_pause.setBounds(420, 20, 90, 30);
+		btn_pause.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+			}
+		});
+		this.add(btn_pause);
+
+		//截图 界面
+		btn_screenshot = new JButton("截图");
+		btn_screenshot.setBounds(550, 20, 90, 30);
+		btn_screenshot.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+			}
+		});
+		this.add(btn_screenshot);
+
+		//录制视频 界面
+		btn_record = new JButton("录制视频");
+		btn_record.setBounds(680, 20, 90, 30);
+		btn_record.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				
+			}
+		});
+		this.add(btn_record);
+
+		//设置 界面
+		btn_set = new JButton("设置");
+		btn_set.setBounds(810, 20, 90, 30);
+		btn_set.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+			
+			}
+		});
+		this.add(btn_set);
+
+		//选择特效 界面
+	    jp_select = new JPanel();
+	    jp_select.setLayout(null);
+	    jp_select.setBounds(20, 80, 200, 460);
+	    jp_select.setBorder(BorderFactory.createTitledBorder("请选择特效："));
+	    this.add(jp_select);
+
+		//JList  选择列表
+		jList = new JList(show);
+		jList.setBounds(5, 25, 190, 420);
+		jList.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				
+			}
+		});
+		jp_select.add(jList);
+
+		jp_original = new JPanel();
+		jp_original.setLayout(null);
+		jp_original.setBounds(220, 80, 470, 460);
+		jp_original.setBorder(BorderFactory.createTitledBorder("原始视频："));
+	    this.add(jp_original);
+
+	    jp_transform = new JPanel();
+	    jp_transform.setLayout(null);
+	    jp_transform.setBounds(690, 80, 470, 460);
+	    jp_transform.setBorder(BorderFactory.createTitledBorder("变换视频："));
+	    this.add(jp_transform);
+
+	    jp_video1 = new JPanel();
+	    jp_video1.setLayout(null);
+	    jp_video1.setBounds(10, 25, 450, 420);
+	    jp_video1.setBorder(BorderFactory.createLineBorder(Color.black, 1));
+	    jp_original.add(jp_video1);
+
+	    jp_video2 = new JPanel();
+	    jp_video2.setLayout(null);
+	    jp_video2.setBounds(10, 25, 450, 420);
+	    jp_video2.setBorder(BorderFactory.createLineBorder(Color.black, 1));
+	    jp_transform.add(jp_video2);
+
+		this.setVisible(true);
+	}
+
+
+
+
+	/**
+	 * 设置窗口 方法
+	 */
+	public void showSetFrame(){
+		//创建新的窗口				
+		setFrame = new JFrame("设置窗口");				
+		//设置在屏幕的位置				
+		setFrame.setLocation(750,320);		
+		//窗体大小			
+		setFrame.setSize(530,360);
+		
+		setFrame.setLayout(null);
+		
+		jl_SDirectory = new JLabel("存储截图目录：");
+		jl_SDirectory.setBounds(80, 5, 100, 30);
+		setFrame.add(jl_SDirectory);
+		
+		jf_SDirectory = new JTextField();
+		jf_SDirectory.setBounds(80, 40, 240, 30);
+		jf_SDirectory.setText(SDirectory);
+		jf_SDirectory.setFocusable(false);
+		setFrame.add(jf_SDirectory);
+		
+		btn_SDirectory = new JButton("选择目录");
+		btn_SDirectory.setBounds(340, 40, 90, 30);
+		setFrame.add(btn_SDirectory);
+		btn_SDirectory.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				JFileChooser fileChooser = new JFileChooser("D:\\");
+			    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			    int returnVal = fileChooser.showOpenDialog(fileChooser);
+			    if(returnVal == JFileChooser.APPROVE_OPTION){       
+			        String filePath= fileChooser.getSelectedFile().getAbsolutePath();//这个就是选择的文件夹的路径
+			        jf_SDirectory.setText(filePath);
+			        
+			    }
+			}
+		});
+		
+		jl_VDirectory = new JLabel("存储视频目录：");
+		jl_VDirectory.setBounds(80, 75, 100, 30);
+		setFrame.add(jl_VDirectory);
+		
+		jf_VDirectory = new JTextField();
+		jf_VDirectory.setBounds(80, 110, 240, 30);
+		jf_VDirectory.setText(VDirectory);
+		jf_VDirectory.setFocusable(false);
+		setFrame.add(jf_VDirectory);
+		
+		btn_VDirectory = new JButton("选择目录");
+		btn_VDirectory.setBounds(340, 110, 90, 30);
+		setFrame.add(btn_VDirectory);
+		btn_VDirectory.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				JFileChooser fileChooser = new JFileChooser("D:\\");
+			    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			    int returnVal = fileChooser.showOpenDialog(fileChooser);
+			    if(returnVal == JFileChooser.APPROVE_OPTION){       
+			        String filePath= fileChooser.getSelectedFile().getAbsolutePath();//这个就是选择的文件夹的路径
+			        jf_VDirectory.setText(filePath);
+			    }
+			}
+		});
+		
+		jl_SFormat = new JLabel("截图保存格式：");
+		jl_SFormat.setBounds(80, 155, 100, 30);
+		setFrame.add(jl_SFormat);
+		
+		jb_SFormat = new JComboBox();
+		jb_SFormat.setBounds(190, 155, 100, 30);
+		for (int i = 0; i < 4; i++) {
+			jb_SFormat.addItem(sFormat[i]);
+		}
+		jb_SFormat.addItemListener(new ItemListener() {
+					
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// 
+			}
+		});
+		setFrame.add(jb_SFormat);
+		
+		jl_VFormat = new JLabel("视频保存格式：");
+		jl_VFormat.setBounds(80, 200, 100, 30);
+		setFrame.add(jl_VFormat);
+		
+		jb_VFormat = new JComboBox();
+		jb_VFormat.setBounds(190, 200, 100, 30);
+		jb_VFormat.setBorder(BorderFactory.createRaisedBevelBorder());
+		for (int i = 0; i < 5; i++) {
+			jb_VFormat.addItem(vFormat[i]);
+			if (vFormat[i].equals(VFormat)) {
+				VFormatIndex = i;
+			}
+		}
+		jb_VFormat.setSelectedIndex(VFormatIndex);
+		
+		jb_VFormat.addItemListener(new ItemListener() {
+					
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// TODO Auto-generated method stub
+			}
+		});
+		setFrame.add(jb_VFormat);
+		
+		btn_sure = new JButton("确定");
+		btn_sure.setBounds(220, 260, 80, 30);
+		btn_sure.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		setFrame.add(btn_sure);
+
+		if (setFrame == null || setFrame.isVisible()==false) {
+			//显示窗体			
+			setFrame.setVisible(true);
+		}
+	}
+
+
+	//截屏 方法
+
+
+	/**
+	 * 录制视频 方法
+	 */
+   public void Capvideoview() {
+    	        //创建新的窗口				
+    			cutFrame = new JFrame("录制窗口");							
+    			cutFrame.setLocation(500,320);		
+    			cutFrame.setSize(530,360);		
+    			cutFrame.setLayout(null);
+    			
+   			    btn_cutstart=new JButton("开始录制");
+    			btn_cutstart.setBounds(200, 120, 150, 50);
+    			btn_cutstart.addActionListener(new ActionListener() {
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						// TODO Auto-generated method stub
+						
+					}	
+    			});
+    			
+    		cutFrame.add(btn_cutstart);
+    			
+    			
+    		   btn_cutstop=new JButton("结束录制");
+    		   btn_cutstop.setBounds(200,180,150,50);
+    		   btn_cutstop.addActionListener(new ActionListener(){
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					// TODO Auto-generated method stub
+					
+				}   
+    		   });
+    		   cutFrame.add(btn_cutstop);
+    		   	
+    		   cutFrame.setVisible(true);
+    	      	
+    	
+    }
+
+   
+   public static void main(String[] args) throws Exception {
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				try {
+					new MyGUI();
+				} catch (Exception e) {
+					// TODO: handle exception
+					e.printStackTrace();
+				}
+			}
+		});
+
+	}
+   
+
+}
+ 
